@@ -1,0 +1,29 @@
+# AWS App Runner Configuration for LearnWise AI Backend
+# This file automates the build and execution parameters for the FastAPI backend service.
+
+version: 1.0
+
+runtime: python3
+
+# Build configuration details
+build:
+  commands:
+    # Install all dependencies required by the FastAPI application
+    - pip install -r backend/requirements.txt
+
+# Run configuration details
+run:
+  # Launch FastAPI via uvicorn production server
+  command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+  
+  # Configure the container listener port
+  network:
+    port: 8000
+  
+  # Recommended environment variables placeholder configuration
+  # These values can also be securely overridden in the AWS App Runner Console
+  env:
+    - name: JWT_SECRET
+      value: learnwise_production_secret_key_change_me_in_aws_console_2026
+    - name: DATABASE_URL
+      value: sqlite:///./learnwise.db
