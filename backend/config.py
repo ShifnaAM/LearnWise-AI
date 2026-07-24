@@ -2,6 +2,8 @@ import os
 from pydantic_settings import BaseSettings
 from typing import Optional
 
+IS_VERCEL = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
+
 class Settings(BaseSettings):
     PROJECT_NAME: str = "LearnWise AI"
     DATABASE_URL: str = "sqlite:///./learnwise.db"
@@ -17,7 +19,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     
     # Upload folder
-    UPLOAD_DIR: str = "uploads"
+    UPLOAD_DIR: str = "/tmp/uploads" if IS_VERCEL else "uploads"
     
     class Config:
         env_file = ".env"
@@ -26,5 +28,8 @@ class Settings(BaseSettings):
 # Create settings instance
 settings = Settings()
 
-# Ensure directories exist
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+# Ensure directories exist if writable
+try:
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+except Exception:
+    pass
