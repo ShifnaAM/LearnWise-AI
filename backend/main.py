@@ -49,6 +49,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def ensure_api_prefix(request, call_next):
+    path = request.scope.get("path", "")
+    if not path.startswith("/api") and not path.startswith("/openapi") and not path.startswith("/docs"):
+        request.scope["path"] = "/api" + path
+    response = await call_next(request)
+    return response
+
 # Authentication Utilities
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
