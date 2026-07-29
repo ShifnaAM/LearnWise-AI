@@ -157,7 +157,8 @@ def startup_event():
         sample_email = "student@learnwise.edu"
         existing_user = db.query(User).filter(User.email == sample_email).first()
         if not existing_user:
-            hashed_pwd = get_password_hash("password123")
+            # Pre-computed bcrypt hash for "password123" to avoid password hashing during application startup
+            hashed_pwd = "$2b$12$jDQynFnu1crGUW.9Atqq9ellUW4lUraNrgdpszcQOlNIYBstzJm1a"
             sample_user = User(
                 name="Alex Mercer",
                 email=sample_email,
