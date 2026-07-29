@@ -263,3 +263,47 @@ def test_semester_workflow():
     s1_res2 = client.get("/api/subjects?semester=Semester 1", headers=headers)
     assert len(s1_res2.json()) == 0
 
+
+def test_long_password_auth():
+    # Test registration and login with passwords longer than 72 bytes
+    very_long_pwd = "A" * 150 + "🚀" * 10
+    
+    # 1. Register user with 150+ char password
+    reg_response = client.post("/api/auth/register", json={
+        "name": "Long Password User",
+        "email": "longpwd@university.edu",
+        "password": very_long_pwd
+    })
+    assert reg_response.status_code == 200
+    assert "access_token" in reg_response.json()
+
+    # 2. Login with the long password
+    login_response = client.post("/api/auth/login", json={
+        "email": "longpwd@university.edu",
+        "password": very_long_pwd
+    })
+    assert login_response.status_code == 200
+    assert "access_token" in login_response.json()
+
+    # 3. Forgot & Reset password with long password
+    forgot_res = client.post("/api/auth/forgot-password", json={"email": "longpwd@university.edu"})
+    assert forgot_res.status_code == 200
+    code = forgot_res.json()["code"]
+
+    new_long_pwd = "B" * 200
+    reset_res = client.post("/api/auth/reset-password", json={
+        "email": "longpwd@university.edu",
+        "token": code,
+        "new_password": new_long_pwd
+    })
+    assert reset_res.status_code == 200
+
+    # 4. Login with new long password
+    new_login_res = client.post("/api/auth/login", json={
+        "email": "longpwd@university.edu",
+        "password": new_long_pwd
+    })
+    assert new_login_res.status_code == 200
+    assert "access_token" in new_login_res.json()
+
+

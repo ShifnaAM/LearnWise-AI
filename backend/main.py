@@ -61,18 +61,31 @@ async def ensure_api_prefix(request, call_next):
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
+def truncate_password(password: str) -> str:
+    """
+    Truncate password to maximum 72 bytes UTF-8 encoded to satisfy bcrypt hard limits
+    and avoid ValueError: password cannot be longer than 72 bytes.
+    """
+    if not password:
+        return ""
+    if isinstance(password, str):
+        return password.encode("utf-8")[:72].decode("utf-8", errors="ignore")
+    return password
+
 def verify_password(plain_password, hashed_password):
+    safe_password = truncate_password(plain_password)
     try:
-        return pwd_context.verify(plain_password, hashed_password)
+        return pwd_context.verify(safe_password, hashed_password)
     except Exception:
         import bcrypt
         try:
-            return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+            return bcrypt.checkpw(safe_password.encode("utf-8"), hashed_password.encode("utf-8"))
         except Exception:
             return False
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    safe_password = truncate_password(password)
+    return pwd_context.hash(safe_password)
 
 def create_access_token(data: dict, expires_delta: Optional[datetime.timedelta] = None):
     to_encode = data.copy()
