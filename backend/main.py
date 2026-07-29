@@ -17,7 +17,21 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+import passlib.handlers.bcrypt
 from sqlalchemy.orm import Session
+
+# Patch passlib's internal bcrypt handler to prevent ValueError: password cannot be longer than 72 bytes
+# during CryptContext initialization or password verification/hashing at application startup.
+_orig_bcrypt_calc_checksum = passlib.handlers.bcrypt._BcryptCommon._calc_checksum
+
+def _safe_bcrypt_calc_checksum(self, secret):
+    if isinstance(secret, str):
+        secret = secret.encode("utf-8")
+    if isinstance(secret, (bytes, bytearray)):
+        secret = secret[:72]
+    return _orig_bcrypt_calc_checksum(self, secret)
+
+passlib.handlers.bcrypt._BcryptCommon._calc_checksum = _safe_bcrypt_calc_checksum
 
 from backend.config import settings
 from backend.database import engine, Base, get_db
